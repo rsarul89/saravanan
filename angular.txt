@@ -1,0 +1,144 @@
+<div class="row" ng-controller="CsvConvertorController">
+                <div class="col-md-6" id="container1">
+                                <div class="row">
+                                                <div class="col-md-6">
+                                                                <div class="form-group">
+                                                                                <input type="text" class="form-control" ng-model="filterText"></input>
+                                                                </div>
+                                                </div>
+                                                <div class="col-md-6">
+                                                                <div class="form-group">
+                                                                                <button class="btn btn-primary" ng-click="add()">Add country</button>
+                                                                </div>
+                                                </div>
+                                </div>
+                                <table class="table table-bordered">
+                                                <thead>
+                                                  <tr>
+                                                                <th></th>
+                                                                <th>Title</th>
+                                                                <th>Body</th>
+                                                  </tr>
+                                                </thead>
+                                                <tbody >
+                                                  <tr ng-repeat="country in countries  | filter: { name: filterText } ">
+                                                                <td><span class="glyphicon glyphicon-edit" ng-click="editTable($index)"></span></td>
+                                                                <td>{{country.name}}</td>
+                                                                <td>{{x.body}}</td>
+                                                  </tr>
+                                                </tbody>
+                                </table>
+                                <button class="btn btn-primary" ng-click="editTable()">Add</button>
+                </div>
+                <div class="col-md-6" id="container2" ng-show="isFormOpen">
+                                <form name="myForm" novalidate>
+                                
+                                                <div class="form-group" ng-class="{ 'has-error' : myForm.$invalid }">
+                                                                <label for="txtTitle">name:</label>
+                                                                <input type="text" class="form-control" name="txtTitle" id="txtTitle" ng-model="saveObj.title" required></input>
+                                                                <p ng-show="myForm.txtTitle.$error.required && !myForm.txtTitle.$error.pristine" class="text-danger">Username is required.</p>
+                                                                
+                                                </div>
+                                                
+                                                <div class="form-group">
+                                                                <button class="btn btn-primary" ng-click="saveTable()" ng-disabled="!myForm.$valid">Save</button>
+                                                                <button class="btn btn-primary" ng-click="saveTable()" ng-disabled="!myForm.$valid">Save</button>
+                                                </div>
+                                </form>
+                </div>   
+</div>
+ 
+///Service
+ 
+// angularMod.js
+(function() {
+    'use strict';
+var angularModule = angular .module('app');
+ 
+ 
+angularModule.directive('modal', function($http) {
+                $scope.dismiss();
+});
+                
+angularModule.service('CRUDService', function($http) {
+                this.getMethod = function(url) {
+                                return $http.get(url);
+                }
+                this.putMethod = function(url,id, data, entity) {
+                                var tempurl = entity ? url + id + entity : url + id ;
+                                if(data) {
+                                                return $http.put(tempurl, data);
+                                } else {
+                                                return $http.put(tempurl);
+                                }
+                }
+                this.postMethod = function(url, data) {
+                                return $http.post(url, data);
+                }
+ 
+});
+})();
+ 
+//Controller
+ 
+// csv-converter.controller.js
+(function() {
+    'use strict';
+ 
+                angular
+    .module('app')
+    .controller('CsvConvertorController', CsvConvertorController);
+                                
+                function CsvConvertorController(CRUDService, $scope) { 
+                $scope.countries = [];
+                                var getCountryList = function() {
+                                                //Load coity CRUD 
+                                                CRUDService.getMethod('https://jsonplaceholder.typicode.com/posts').then(function(response){
+                                                                $scope.countries = response.data;
+                                                });
+                                }
+                                getCountryList();
+                                $scope.tableData = [];
+                                $scope.saveObj = {
+                                                title:'',
+                                                body:'',
+                                                id:''
+                                }
+                                $scope.isFormOpen = false;
+                                $scope.isEdit = false;
+                                
+$scope.restForm = function() {
+                //set form prosti
+                $scope.myForm.txtTitle.pristine = true;
+}
+                                
+                                $scope.add = function(item) {
+                                                //save new
+                                                CRUDService.postMethod('https://jsonplaceholder.typicode.com/posts', item).then(function(response){
+                                                                getCountryList();
+                                                });
+                                                
+                                }
+                                
+                                $scope.edit = function(url, id, item) {
+                                                //save new
+                                                CRUDService.putMethod('https://jsonplaceholder.typicode.com/posts/', id, item).then(function(response){
+                                                                $scope.dismiss();
+                                                                getCountryList();
+                                                });
+                                }
+                                $scope.activateDeactivate = function(activeStatus, id) {
+                                                //save new
+                                                if(activeStatus) {
+                                                                CRUDService.putMethod('https://jsonplaceholder.typicode.com/posts/', id, '', '/activate').then(function(response){
+                                                                getCountryList();
+                                                });
+                                                } else {
+                                                                                CRUDService.putMethod('https://jsonplaceholder.typicode.com/posts/', id, '', '/deactivate').then(function(response){
+                                                                                getCountryList();
+                                                                                });
+                                                }
+ 
+                                }
+                }
+})();
